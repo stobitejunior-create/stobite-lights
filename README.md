@@ -1,16 +1,26 @@
 # Stobite Lights
 
-A modern lighting console for Windows 11 — a replacement for Martin M-PC.
+A modern lighting console for Windows 11 and macOS (Apple Silicon and Intel), built to replace Martin M-PC.
 
-## Install (Windows 11)
+## Install
 
-Copy one of these from `dist/` to the PC:
+All builds are in `dist/` (run `npm run dist:all` to rebuild them).
 
+### Windows 11
 - **Stobite-Lights-Setup-1.0.0.exe**: installer with Start-menu and desktop shortcuts.
 - **Stobite-Lights-Portable-1.0.0.exe**: runs without installing (e.g. from a USB stick).
 
 The app isn't code-signed, so the first time Windows SmartScreen may say *"Windows protected your PC"*: click **More info → Run anyway**.
 When Windows Firewall asks, allow **Private networks** so Art-Net/sACN can reach your nodes.
+
+### macOS
+- **Apple Silicon (M1–M4…)**: `Stobite-Lights-1.0.0-mac-arm64.dmg`
+- **Intel Macs**: `Stobite-Lights-1.0.0-mac-x64.dmg`
+
+Not sure which Mac you have? Apple menu → About This Mac. "Chip: Apple M…" means arm64, and "Processor: Intel" means x64.
+Open the DMG and drag Stobite Lights to Applications. The app isn't notarised by Apple, so on first launch macOS will block it:
+open **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. When asked, allow
+**Local Network** access so Art-Net/sACN can reach your lights. ENTTEC-style USB interfaces use the FTDI driver built into macOS.
 
 ## What it does
 
@@ -38,14 +48,16 @@ When Windows Firewall asks, allow **Private networks** so Art-Net/sACN can reach
 
 Shortcuts: `Space` GO · `Esc` clear · `H` highlight · type digits to use the command line · `Ctrl+Z` undo · `Ctrl+S` save.
 
-## Development (Mac)
+## Development
 
 ```bash
 npm install
 npm start          # run the desktop app
 npm test           # engine + packet tests
 npm run preview    # UI in a browser at http://localhost:5178 (no DMX output)
-npm run dist:win   # build Windows installer + portable exe into dist/
+npm run dist:win   # Windows installer + portable exe
+npm run dist:mac   # Mac DMG/zip for Apple Silicon and Intel
+npm run dist:all   # everything
 ```
 
 `SL_SELFTEST=/path/out.png npm start` loads the demo rig, runs cues, sends to 127.0.0.1,

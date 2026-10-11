@@ -2,7 +2,7 @@
   "name": "stobite-lights",
   "productName": "Stobite Lights",
   "version": "1.0.0",
-  "description": "Stobite Lights — a lighting console for Windows 11 (M-PC replacement)",
+  "description": "Stobite Lights \u2014 a lighting console for Windows 11 (M-PC replacement)",
   "author": "Stobite",
   "license": "UNLICENSED",
   "private": true,
@@ -12,7 +12,8 @@
     "preview": "node tools/serve.js",
     "test": "node --test test/",
     "dist:win": "electron-builder --win --x64",
-    "dist:mac": "electron-builder --mac --dir"
+    "dist:mac": "electron-builder --mac --arm64 --x64",
+    "dist:all": "electron-builder --mac --arm64 --x64 && electron-builder --win --x64"
   },
   "build": {
     "appId": "com.stobite.lights",
@@ -65,8 +66,34 @@
       "artifactName": "Stobite-Lights-Portable-${version}.${ext}"
     },
     "mac": {
-      "target": "dir",
-      "icon": "build/icon.png"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.music",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "artifactName": "Stobite-Lights-${version}-mac-${arch}.${ext}",
+      "extendInfo": {
+        "NSLocalNetworkUsageDescription": "Stobite Lights sends DMX to lighting nodes and fixtures on your network (Art-Net and sACN).",
+        "NSBluetoothAlwaysUsageDescription": "Stobite Lights can use Bluetooth MIDI controllers."
+      }
+    },
+    "dmg": {
+      "title": "Stobite Lights ${version}"
     }
   },
   "devDependencies": {
