@@ -1,0 +1,76 @@
+{
+  "name": "stobite-lights",
+  "productName": "Stobite Lights",
+  "version": "1.0.0",
+  "description": "Stobite Lights — a lighting console for Windows 11 (M-PC replacement)",
+  "author": "Stobite",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "preview": "node tools/serve.js",
+    "test": "node --test test/",
+    "dist:win": "electron-builder --win --x64",
+    "dist:mac": "electron-builder --mac --dir"
+  },
+  "build": {
+    "appId": "com.stobite.lights",
+    "productName": "Stobite Lights",
+    "copyright": "Stobite",
+    "files": [
+      "main.js",
+      "preload.js",
+      "net/**/*",
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "fileAssociations": [
+      {
+        "ext": "slshow",
+        "name": "Stobite Lights Show",
+        "role": "Editor"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "signExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Stobite Lights",
+      "artifactName": "Stobite-Lights-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Stobite-Lights-Portable-${version}.${ext}"
+    },
+    "mac": {
+      "target": "dir",
+      "icon": "build/icon.png"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3"
+  }
+}
