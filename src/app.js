@@ -5,7 +5,8 @@ import { runCommand } from './engine/command.js';
 import { desk } from './io/bridge.js';
 import { UsbManager } from './io/usb.js';
 import { MidiManager } from './io/midi.js';
-import { h, clear, icon, modal, confirmDialog, promptDialog, toast, popupMenu } from './ui/dom.js';
+import { h, clear, icon, modal, confirmDialog, promptDialog, toast, popupMenu, slider, pct } from './ui/dom.js';
+import { allOff } from './engine/scenes.js';
 import { createProgrammer } from './ui/programmer.js';
 import { createWing } from './ui/playbacks.js';
 import { createFixturesView } from './ui/fixtures-view.js';
@@ -16,18 +17,26 @@ import { createEffectsView } from './ui/effects-view.js';
 import { createPatchView } from './ui/patch-view.js';
 import { createOutputView } from './ui/output-view.js';
 import { createSettingsView } from './ui/settings-view.js';
+import { createScenesView } from './ui/scenes-view.js';
+import { createLightsView } from './ui/lights-view.js';
+import { createBasicSettings } from './ui/basic-setup.js';
 
 const engine = new Engine();
 const usb = new UsbManager();
 
+function readMode() {
+  try { return localStorage.getItem('sl-mode') === 'advanced' ? 'advanced' : 'basic'; } catch { return 'basic'; }
+}
+
 const ui = {
-  tab: 'fixtures',
+  mode: readMode(),
+  tab: 'scenes',
   currentCuelist: null,
   filePath: null,
   dirty: false,
 };
 
-const TABS = [
+const TABS_ADV = [
   { id: 'fixtures', label: 'Fixtures', create: createFixturesView },
   { id: 'stage', label: 'Stage', create: createStageView },
   { id: 'cues', label: 'Cues', create: createCuesView },
@@ -37,6 +46,13 @@ const TABS = [
   { id: 'output', label: 'DMX Output', create: createOutputView },
   { id: 'settings', label: 'Settings', create: createSettingsView },
 ];
+const TABS_BASIC = [
+  { id: 'scenes', label: 'Scenes', create: createScenesView },
+  { id: 'lights', label: 'Lights', create: createLightsView },
+  { id: 'setup', label: 'Settings', create: createBasicSettings },
+];
+const tabsFor = () => (ui.mode === 'basic' ? TABS_BASIC : TABS_ADV);
+const settingsTab = () => (ui.mode === 'basic' ? 'setup' : 'settings');
 
 // ---- undo -----------------------------------------------------------------
 const undo = { past: [], future: [], snapshot: null, restoring: false };
@@ -80,6 +96,8 @@ const ctx = {
   desk,
   midi: null,
   setTab,
+  mode: () => ui.mode,
+  setMode,
   save,
   openShow,
   newShow,
@@ -100,9 +118,9 @@ const ctx = {
 const root = document.getElementById('app');
 const tabBar = h('nav', { class: 'tabs' });
 const showName = h('div', { class: 'show-name', title: 'Show file' });
-const statusPill = h('div', { class: 'status-pill', onclick: () => setTab('settings') }, h('span', { class: 'dot' }), h('span', null, 'Output'));
-const blackoutBtn = h('button', { class: 'btn', title: 'Blackout (all intensity to zero)', onclick: () => toggleBlackout() }, 'Blackout');
-const undoBtn = h('button', { class: 'btn ghost', title: 'Undo (Ctrl+Z)', onclick: doUndo }, icon('undo'));
+const statusPill = h('div', { class: 'status-pill', onclick: () => setTab(settingsTab()) }, h('span', { class: 'dot' }), h('span', null, 'Output'));
+const blackoutBtn = h('button', { class: 'btn adv-only', title: 'Blackout (all intensity to zero)', onclick: () => toggleBlackout() }, 'Blackout');
+const undoBtn = h('button', { class: 'btn ghost adv-only', title: 'Undo (Ctrl+Z)', onclick: doUndo }, icon('undo'));
 
 const topbar = h('header', { class: 'topbar' },
   h('div', { class: 'brand' }, h('div', { class: 'brand-mark' }), 'Stobite Lights'),
@@ -114,7 +132,7 @@ const topbar = h('header', { class: 'topbar' },
 const viewHost = h('div', { class: 'view', id: 'view' });
 const cmdInput = h('input', { placeholder: 'Type a command — e.g. 1 thru 8 @ 50, group 2 @ full, record cue 5', spellcheck: false });
 const cmdFeedback = h('div', { class: 'cmd-feedback' });
-const cmdBar = h('div', { style: { padding: '10px 20px 12px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: '4px' } },
+const cmdBar = h('div', { class: 'cmdbar', style: { padding: '10px 20px 12px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: '4px' } },
   h('div', { class: 'cmd' }, h('span', { class: 'prompt' }, '›'), cmdInput),
   cmdFeedback,
 );
@@ -123,23 +141,49 @@ const main = h('main', { class: 'main' }, viewHost, cmdBar);
 const programmer = createProgrammer(ctx);
 const wing = createWing(ctx);
 
-root.append(topbar, main, programmer.el, wing.el);
+// Basic mode: one big brightness slider and two buttons instead of the wing.
+const bbSlider = slider(engine.show.settings.grandMaster, (v) => { engine.show.settings.grandMaster = v; }, { fill: 'var(--flash)' });
+const bbVal = h('span', { class: 'mono bb-val' });
+const bbOff = h('button', { class: 'btn lg', title: 'Fade every light out', onclick: () => { allOff(engine); toast('Lights fading out'); } }, 'Lights off');
+const bbBlackout = h('button', { class: 'btn lg', title: 'Instantly kill all light (tap again to restore)', onclick: () => toggleBlackout() }, 'Blackout');
+const basicBar = h('div', { class: 'basic-bar' },
+  h('div', { class: 'bb-master' }, h('span', { class: 'label' }, 'Brightness'), bbSlider, bbVal),
+  h('div', { class: 'spacer' }), bbOff, bbBlackout);
+
+root.append(topbar, main, programmer.el, wing.el, basicBar);
+applyModeClass();
+
+function applyModeClass() {
+  root.classList.toggle('basic', ui.mode === 'basic');
+  document.body.classList.toggle('basic', ui.mode === 'basic');
+}
+
+function setMode(m) {
+  if (m === ui.mode) return;
+  ui.mode = m;
+  try { localStorage.setItem('sl-mode', m); } catch {}
+  applyModeClass();
+  setTab(settingsTab()); // stay on Settings so the switch feels instant
+  toast(m === 'basic' ? 'Basic interface' : 'Advanced interface — everything is unlocked');
+}
 
 let view = null;
 function setTab(id) {
   ui.tab = id;
   view?.destroy?.();
   clear(viewHost);
-  const t = TABS.find((x) => x.id === id) || TABS[0];
+  const tabs = tabsFor();
+  const t = tabs.find((x) => x.id === id) || tabs[0];
+  ui.tab = t.id;
   view = t.create(ctx);
   viewHost.append(view.el);
   renderTabs();
-  try { localStorage.setItem('sl-tab', id); } catch {}
+  try { localStorage.setItem(`sl-tab-${ui.mode}`, t.id); } catch {}
 }
 
 function renderTabs() {
   clear(tabBar);
-  for (const t of TABS) tabBar.append(h('button', { class: `tab ${ui.tab === t.id ? 'active' : ''}`, onclick: () => setTab(t.id) }, t.label));
+  for (const t of tabsFor()) tabBar.append(h('button', { class: `tab ${ui.tab === t.id ? 'active' : ''}`, onclick: () => setTab(t.id) }, t.label));
 }
 
 function renderShowName() {
@@ -166,8 +210,10 @@ async function renameShow() {
 
 function toggleBlackout(force) {
   engine.blackout = force ?? !engine.blackout;
-  blackoutBtn.classList.toggle('blackout-on', engine.blackout);
-  blackoutBtn.textContent = engine.blackout ? 'Blackout ON' : 'Blackout';
+  for (const b of [blackoutBtn, bbBlackout]) {
+    b.classList.toggle('blackout-on', engine.blackout);
+    b.textContent = engine.blackout ? 'Blackout ON' : 'Blackout';
+  }
 }
 ctx.toggleBlackout = toggleBlackout;
 
@@ -301,6 +347,7 @@ document.addEventListener('keydown', (e) => {
   if (mod && e.key.toLowerCase() === 'y' && !typing) { e.preventDefault(); doRedo(); return; }
   if (mod && e.key.toLowerCase() === 'a' && !typing) { e.preventDefault(); engine.select(engine.show.fixtures.map((f) => f.id)); return; }
   if (typing || mod || document.querySelector('.overlay')) return;
+  if (ui.mode === 'basic') return;
   if (/^[0-9@+\-.]$/.test(e.key)) {
     cmdInput.focus();
     return; // the key lands in the command line
@@ -373,7 +420,9 @@ async function updateStatus() {
   dot.className = 'dot ' + (desk.isWeb ? 'warn' : !parts.length ? 'bad' : stats.errors && stats.lastError ? 'warn' : usbBad ? 'warn' : 'ok');
   statusPill.lastChild.textContent = desk.isWeb
     ? 'Preview — no DMX output'
-    : parts.length ? `${parts.join(' + ')} · ${universes} universe${universes === 1 ? '' : 's'}` : 'No outputs enabled';
+    : ui.mode === 'basic'
+      ? (parts.length ? 'Connected to lights' : 'Not connected — open Settings')
+      : parts.length ? `${parts.join(' + ')} · ${universes} universe${universes === 1 ? '' : 's'}` : 'No outputs enabled';
   statusPill.title = stats.lastError ? `Last network error: ${stats.lastError}` : '';
 }
 setInterval(updateStatus, 1000);
@@ -389,8 +438,14 @@ setInterval(() => {
 // UI refresh loop for live values
 function frame() {
   view?.frame?.();
-  programmer.frame();
-  wing.frame();
+  if (ui.mode === 'basic') {
+    const gm = engine.show.settings.grandMaster;
+    bbSlider.setValue(gm);
+    bbVal.textContent = pct(gm);
+  } else {
+    programmer.frame();
+    wing.frame();
+  }
   requestAnimationFrame(frame);
 }
 
@@ -440,9 +495,9 @@ async function boot() {
   await midi.init();
   resetUndo();
   renderShowName();
-  let tab = 'fixtures';
-  try { tab = localStorage.getItem('sl-tab') || tab; } catch {}
-  setTab(engine.show.fixtures.length ? tab : 'fixtures');
+  let tab = tabsFor()[0].id;
+  try { tab = localStorage.getItem(`sl-tab-${ui.mode}`) || tab; } catch {}
+  setTab(tabsFor().some((t) => t.id === tab) ? tab : tabsFor()[0].id);
   pushOutputs();
   lastUsbKey = JSON.stringify(engine.show.settings.outputs.usb || []);
   restoreUsb();
@@ -459,6 +514,8 @@ async function selfTest() {
   Object.assign(o.sacn, { enabled: true, unicast: '127.0.0.1' });
   engine.changed();
   for (let s = 0; s < 3; s++) engine.go(engine.slotCuelist(0, s));
+  ui.mode = 'advanced';
+  applyModeClass();
   setTab('stage');
 }
 

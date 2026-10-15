@@ -25,6 +25,7 @@ export function loadDemoRig(engine) {
   group('Washes', washes);
   group('Front Light', front);
   group('All Movers', [...spots, ...washes]);
+  group('Haze', haze);
 
   const colorables = [...pars, ...washes, ...spots];
   const colors = [['Red', [1, 0, 0]], ['Orange', [1, 0.45, 0]], ['Yellow', [1, 0.9, 0]], ['Green', [0, 1, 0.1]], ['Cyan', [0, 1, 1]], ['Blue', [0, 0.1, 1]], ['Magenta', [1, 0, 0.8]], ['White', [1, 1, 1]]];

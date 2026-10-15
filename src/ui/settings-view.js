@@ -2,10 +2,11 @@
 
 import { USB_KINDS } from '../io/usb.js';
 import { MIDI_ACTIONS } from '../io/midi.js';
-import { h, clear, btn, icon, field, toggle, select, numberInput, toast } from './dom.js';
+import { h, clear, btn, icon, field, toggle, select, numberInput, toast, segmented } from './dom.js';
 
-export function createSettingsView(ctx) {
+export function createSettingsView(ctx, opts = {}) {
   const { engine, desk, usb, midi } = ctx;
+  const simple = !!opts.simple;
   const el = h('div');
   let ifaces = [];
   let nodes = null;
@@ -24,37 +25,52 @@ export function createSettingsView(ctx) {
 
   function render() {
     clear(el);
-    el.append(h('div', { class: 'view-header' }, h('h1', null, 'Settings')));
+    if (!simple) el.append(h('div', { class: 'view-header' }, h('h1', null, 'Settings')));
     if (desk.isWeb) {
       el.append(h('div', { class: 'card', style: { borderColor: 'var(--flash)', marginBottom: '14px' } },
         h('strong', null, 'Preview mode. '), h('span', { class: 'muted' }, 'Network output only works in the installed Windows app.')));
     }
     const cols = h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '14px', alignItems: 'start' } });
-    cols.append(h('div', null, artnetCard(), sacnCard()), h('div', null, usbCard(), midiCard(), generalCard()));
-    el.append(cols);
+    if (simple) el.append(h('div', { class: 'card', style: { padding: 0, border: 0, background: 'none' } }, artnetCard(), usbCard(), interfaceCard()));
+    else {
+      cols.append(h('div', null, interfaceCard(), artnetCard(), sacnCard()), h('div', null, usbCard(), midiCard(), generalCard()));
+      el.append(cols);
+    }
+  }
+
+  function interfaceCard() {
+    const mode = ctx.mode();
+    const card = h('div', { class: 'card' }, h('h2', null, 'Interface'));
+    card.append(
+      segmented([{ value: 'basic', label: 'Basic' }, { value: 'advanced', label: 'Advanced' }], mode, (v) => ctx.setMode(v)),
+      h('div', { class: 'hint', style: { marginTop: '10px' } }, mode === 'basic'
+        ? 'Basic: scenes, lights and a simple master. Everything you need for a service or event.'
+        : 'Advanced: programmer, cue lists, presets, effects, patch, DMX monitor, command line and MIDI. Switch back to Basic any time — your shows are the same.'),
+    );
+    return card;
   }
 
   function artnetCard() {
     const a = o().artnet;
     const card = h('div', { class: 'card' },
-      h('div', { class: 'row', style: { marginBottom: '12px' } }, icon('wifi'), h('h2', { style: { margin: 0 } }, 'Art-Net'), h('div', { class: 'spacer' }), toggle(a.enabled, (v) => { a.enabled = v; save(); render(); })),
+      h('div', { class: 'row', style: { marginBottom: '12px' } }, icon('wifi'), h('h2', { style: { margin: 0 } }, simple ? 'Connect over network cable' : 'Art-Net'), h('div', { class: 'spacer' }), toggle(a.enabled, (v) => { a.enabled = v; save(); render(); })),
     );
     if (!a.enabled) {
-      card.append(h('div', { class: 'hint' }, 'Send DMX over Ethernet to Art-Net nodes and fixtures. Most network DMX boxes support it.'));
+      card.append(h('div', { class: 'hint' }, simple ? 'Turn this on if your lights are connected by a network cable or a network DMX box (Art-Net).' : 'Send DMX over Ethernet to Art-Net nodes and fixtures. Most network DMX boxes support it.'));
       return card;
     }
     const unicast = h('input', { class: 'input', value: a.unicast || '', placeholder: '192.168.1.50' });
     unicast.addEventListener('change', () => { a.unicast = unicast.value.trim(); save(); });
     card.append(h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
       field('Network', ifaceSelect(a.iface, (v) => { a.iface = v; save(); })),
-      field('Send to', select([
+      simple ? null : field('Send to', select([
         { value: 'broadcast', label: 'Everything on this network (broadcast)' },
         { value: '2.x', label: 'Art-Net 2.x.x.x network' },
         { value: 'limited', label: 'Limited broadcast 255.255.255.255' },
         { value: 'unicast', label: 'One device (IP address)' },
       ], a.dest, (v) => { a.dest = v; save(); render(); })),
       a.dest === 'unicast' ? field('Device IP address', unicast) : null,
-      field('Universe numbering', h('div', { class: 'row' }, h('span', { class: 'muted' }, 'Desk universe 1 sends to Art-Net universe'),
+      simple ? null : field('Universe numbering', h('div', { class: 'row' }, h('span', { class: 'muted' }, 'Desk universe 1 sends to Art-Net universe'),
         numberInput(Number(a.offset || 0), (v) => { a.offset = v; save(); }, { min: 0, max: 32767 })),
       'Most nodes call their first universe 0 (shown as 0:0:0). Change this if yours starts at 1.'),
       h('div', { class: 'row' }, btn('Find Art-Net devices', async (e) => {
@@ -91,7 +107,7 @@ export function createSettingsView(ctx) {
 
   function usbCard() {
     const card = h('div', { class: 'card' },
-      h('div', { class: 'row', style: { marginBottom: '12px' } }, icon('usb'), h('h2', { style: { margin: 0 } }, 'USB-DMX interfaces')),
+      h('div', { class: 'row', style: { marginBottom: '12px' } }, icon('usb'), h('h2', { style: { margin: 0 } }, simple ? 'Connect with a USB DMX cable' : 'USB-DMX interfaces')),
     );
     if (!usb.supported) {
       card.append(h('div', { class: 'hint' }, 'USB output is not available here.'));

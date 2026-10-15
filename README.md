@@ -22,6 +22,17 @@ Open the DMG and drag Stobite Lights to Applications. The app isn't notarised by
 open **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. When asked, allow
 **Local Network** access so Art-Net/sACN can reach your lights. ENTTEC-style USB interfaces use the FTDI driver built into macOS.
 
+## Basic and Advanced
+
+Stobite Lights opens in **Basic**, built for running a service or event without any lighting-desk knowledge:
+
+- **Scenes**: big buttons. Tap one to bring that look in (the previous one fades out); tap it again to turn it off. Keys `1`–`9` work too.
+- **Lights**: one card per group, each with an on/off switch, a brightness slider and colour swatches. Happy with it? **Save as scene**.
+- **Settings**: add lights with a three-step wizard (it tells you which DMX address to set on each fixture), connect over network or USB, and switch interface.
+- A master **Brightness** slider, **Lights off** (fade everything out) and **Blackout** are always at the bottom.
+
+Switch to **Advanced** any time in *Settings → Interface* for the full desk: programmer, cue lists, presets, effects, patch, DMX monitor, command line and MIDI. Scenes you make in Basic show up as faders in Advanced and vice versa; it is the same show file.
+
 ## What it does
 
 | M-PC feature | Stobite Lights |
@@ -39,7 +50,7 @@ open **System Settings → Privacy & Security**, scroll down and click **Open An
 | Hardware wings | ✅ Any MIDI controller via MIDI Learn (faders, GO, flash, master, pages) |
 | Show files | ✅ `.slshow` files, automatic backup every few seconds, undo/redo |
 
-## Quick start
+## Quick start (Advanced)
 
 1. **Patch**: click *Add fixtures*, pick the type, count and start address. (Or try *Load demo rig*.)
 2. **Settings**: turn on Art-Net and/or sACN and pick your network card, or connect a USB-DMX interface.
