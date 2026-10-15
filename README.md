@@ -4,18 +4,17 @@ A modern lighting console for Windows 11 and macOS (Apple Silicon and Intel), bu
 
 ## Install
 
-All builds are in `dist/` (run `npm run dist:all` to rebuild them).
+All builds are in `dist/`. Run `rebuild-lights` to test, version, commit, push and build them all in one go.
 
 ### Windows 11
-- **Stobite-Lights-Setup-1.0.0.exe**: installer with Start-menu and desktop shortcuts.
-- **Stobite-Lights-Portable-1.0.0.exe**: runs without installing (e.g. from a USB stick).
+- **Stobite-Lights-Setup-<version>.exe**: installer with Start-menu and desktop shortcuts.
 
 The app isn't code-signed, so the first time Windows SmartScreen may say *"Windows protected your PC"*: click **More info → Run anyway**.
 When Windows Firewall asks, allow **Private networks** so Art-Net/sACN can reach your nodes.
 
 ### macOS
-- **Apple Silicon (M1–M4…)**: `Stobite-Lights-1.0.0-mac-arm64.dmg`
-- **Intel Macs**: `Stobite-Lights-1.0.0-mac-x64.dmg`
+- **Apple Silicon (M1–M4…)**: `Stobite-Lights-<version>-mac-arm64.dmg`
+- **Intel Macs**: `Stobite-Lights-<version>-mac-x64.dmg`
 
 Not sure which Mac you have? Apple menu → About This Mac. "Chip: Apple M…" means arm64, and "Processor: Intel" means x64.
 Open the DMG and drag Stobite Lights to Applications. The app isn't notarised by Apple, so on first launch macOS will block it:
