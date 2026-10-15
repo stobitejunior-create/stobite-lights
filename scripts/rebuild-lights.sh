@@ -30,7 +30,7 @@ echo "▸ Building Stobite Lights $ver (Windows, Mac Apple Silicon, Mac Intel)"
 rm -rf dist
 build() { npx electron-builder "$@" 2>&1 | grep -E "⨯|error|building +target" || true; }
 build --mac --arm64 --x64
-build --win --x64
+build --win
 
 echo
 echo "✓ Done — Stobite Lights $ver"

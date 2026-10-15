@@ -1,8 +1,8 @@
 {
   "name": "stobite-lights",
   "productName": "Stobite Lights",
-  "version": "1.0.1",
-  "description": "Stobite Lights — a lighting console for Windows 11 (M-PC replacement)",
+  "version": "0.1.0",
+  "description": "Stobite Lights \u2014 a lighting console for Windows 11 (M-PC replacement)",
   "author": "Stobite",
   "license": "UNLICENSED",
   "private": true,
@@ -11,9 +11,9 @@
     "start": "electron .",
     "preview": "node tools/serve.js",
     "test": "node --test test/",
-    "dist:win": "electron-builder --win --x64",
+    "dist:win": "electron-builder --win",
     "dist:mac": "electron-builder --mac --arm64 --x64",
-    "dist:all": "electron-builder --mac --arm64 --x64 && electron-builder --win --x64"
+    "dist:all": "electron-builder --mac --arm64 --x64 && electron-builder --win"
   },
   "build": {
     "appId": "com.stobite.lights",
@@ -42,7 +42,8 @@
         {
           "target": "nsis",
           "arch": [
-            "x64"
+            "x64",
+            "arm64"
           ]
         }
       ],
