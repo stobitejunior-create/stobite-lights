@@ -23,11 +23,17 @@ if git diff --cached --quiet; then echo "  (no changes to commit)"; else
   git commit -q -m "${msg:-Stobite Lights $ver}" -m "Version $ver"
 fi
 if git remote get-url origin >/dev/null 2>&1; then
-  git push -q 2>&1 && echo "  pushed to GitHub" || echo "  (couldn't push to GitHub; building anyway)"
+  pushed=""
+  for try in 1 2 3; do
+    if git push -q 2>/dev/null; then pushed=1; break; fi
+    sleep 4
+  done
+  [ -n "$pushed" ] && echo "  pushed to GitHub" || echo "  (couldn't push to GitHub; building anyway — run 'git push' in ~/Developer/Lights later)"
 fi
 
 echo "▸ Building Stobite Lights $ver (Windows, Mac Apple Silicon, Mac Intel)"
-rm -rf dist
+# Finder can recreate .DS_Store while we delete, so retry.
+for try in 1 2 3; do rm -rf dist 2>/dev/null && break; sleep 1; done
 build() { npx electron-builder "$@" 2>&1 | grep -E "⨯|error|building +target" || true; }
 build --mac --arm64 --x64
 build --win
