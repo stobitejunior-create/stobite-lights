@@ -1,8 +1,8 @@
 {
   "name": "stobite-lights",
   "productName": "Stobite Lights",
-  "version": "0.1.0",
-  "description": "Stobite Lights \u2014 a lighting console for Windows 11 (M-PC replacement)",
+  "version": "0.1.1",
+  "description": "Stobite Lights — a lighting console for Windows 11 (M-PC replacement)",
   "author": "Stobite",
   "license": "UNLICENSED",
   "private": true,

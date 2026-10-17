@@ -5,7 +5,7 @@ import { runCommand } from './engine/command.js';
 import { desk } from './io/bridge.js';
 import { UsbManager } from './io/usb.js';
 import { MidiManager } from './io/midi.js';
-import { h, clear, icon, modal, confirmDialog, promptDialog, toast, popupMenu, slider, pct } from './ui/dom.js';
+import { h, clear, icon, modal, promptDialog, toast, popupMenu, slider, pct } from './ui/dom.js';
 import { allOff } from './engine/scenes.js';
 import { createProgrammer } from './ui/programmer.js';
 import { createWing } from './ui/playbacks.js';
@@ -252,13 +252,7 @@ async function save(saveAs = false) {
   return true;
 }
 
-async function confirmDiscard() {
-  if (!ui.dirty) return true;
-  return confirmDialog('Unsaved changes', 'This show has unsaved changes. Continue without saving?', { ok: 'Discard changes', danger: true });
-}
-
 async function openShow() {
-  if (!(await confirmDiscard())) return;
   const r = await desk.openShow();
   if (!r) return;
   try {
@@ -276,7 +270,6 @@ async function openShow() {
 }
 
 async function newShow() {
-  if (!(await confirmDiscard())) return;
   engine.load(emptyShow());
   ui.filePath = null;
   ui.currentCuelist = null;
@@ -292,18 +285,10 @@ function resetUndo() {
 
 desk.onMenu((cmd) => ({ new: newShow, open: openShow, save: () => save(), saveAs: () => save(true) })[cmd]?.());
 
+// Closing never asks: the show is backed up automatically and restored on the next launch.
 desk.onBeforeClose(async () => {
   await desk.autosave(JSON.stringify({ show: engine.show, filePath: ui.filePath, dirty: ui.dirty }));
-  if (!ui.dirty) return desk.closeOk();
-  modal({
-    title: 'Save changes before closing?',
-    body: h('p', { class: 'muted', style: { margin: 0 } }, 'Your work is also kept in an automatic backup and will be restored next time.'),
-    actions: [
-      { label: 'Cancel' },
-      { label: "Don't save", cls: 'danger', onClick: () => desk.closeOk() },
-      { label: 'Save', cls: 'primary', onClick: async () => { if (await save()) desk.closeOk(); } },
-    ],
-  });
+  desk.closeOk();
 });
 
 // ---- command line ---------------------------------------------------------

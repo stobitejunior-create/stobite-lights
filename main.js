@@ -173,8 +173,10 @@ function createWindow() {
       const img = await win.webContents.capturePage();
       fs.writeFileSync(SELFTEST, img.toPNG());
       console.log('SELFTEST stats', JSON.stringify(stats));
-      win.__allowClose = true;
-      app.quit();
+      // Close the normal way (the show has unsaved changes): must exit with no prompt.
+      win.on('closed', () => console.log('SELFTEST closed without prompting'));
+      setTimeout(() => { console.log('SELFTEST close was blocked'); process.exit(2); }, 6000);
+      win.close();
     }, 5000);
   }
   win.webContents.setWindowOpenHandler(({ url }) => {
